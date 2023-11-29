@@ -1,5 +1,8 @@
 import sys
-import time
+
+
+# pyqt5
+#
 
 from PyQt5 import QtCore, QtGui
 from PyQt5.QtWidgets import QMainWindow, QWidget, QApplication, QLabel, QFrame, QRadioButton
@@ -16,7 +19,7 @@ class MainWindow(QMainWindow):
 
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.setObjectName("mainWindow")
+        self.setObjectName("main Window")
         qss = "QWidget#mainWindow{background-color:black;}"
         self.setStyleSheet(qss)
         self.initUI()
@@ -26,15 +29,17 @@ class MainWindow(QMainWindow):
 
     def initUI(self):
 
-        self.setWindowTitle("翻译小工具by@Alphandbelt")
+        self.setWindowTitle("翻译小工具by@陶欤冰")
         self.setStyleSheet("#MainWindow{background-color: black}")
         self.setCentralWidget(QWidget())  # 指定主窗口中心部件
         self.statusBar().showMessage("ready")  # 状态栏显示信息
-        # 单选按钮，是否需要记录到单词本
 
+        # 定时器，用来显示时间
         timer = QTimer(self)
         timer.timeout.connect(self.showtime)
         timer.start()
+
+        # 单选按钮，是否需要记录到单词本
         self.is_word_box = QRadioButton('记录到单词本', self)
         self.label_time = QLabel(datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"), self)
         self.label_time.setGeometry(170, 1, 120, 30)
@@ -129,6 +134,7 @@ class MainWindow(QMainWindow):
                 # 将单词和翻译结果写入文件
                 info = "原文:" + data.text() + '| 翻译:' + ms + "\n"
                 if data.text() not in self.words:
+
                     self.word_box_file.write(info)
                     self.word_box_file.flush()
                     self.statusBar().showMessage(data.text(), 5000)

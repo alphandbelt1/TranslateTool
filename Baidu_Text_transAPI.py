@@ -9,11 +9,13 @@ import requests
 import random
 import json
 from hashlib import md5
+from config import *
 
 # Set your own appid/appkey.
+#
 
-appid = 'Set your appid'
-appkey = 'Set your appkey'
+# appid = 'Set your appid'
+# appkey = 'Set your appkey'
 
 
 def make_md5(s, encoding='utf-8'):
@@ -26,6 +28,7 @@ def is_chinese(string):
     :param string: 需要检查的字符串
     :return: bool
     """
+    # 这是我要翻译的文本的内容
     for ch in string:
         if not u'\u4e00' <= ch <= u'\u9fff':
             return False
