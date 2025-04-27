@@ -1,11 +1,12 @@
 import sys
-
+import os 
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 # pyqt5
 #
 
 from PyQt5 import QtCore, QtGui
-from PyQt5.QtWidgets import QMainWindow, QWidget, QApplication, QLabel, QFrame, QRadioButton
+from PyQt5.QtWidgets import QMainWindow, QWidget, QApplication, QLabel, QFrame, QRadioButton, QVBoxLayout, QPushButton, QHBoxLayout, QGraphicsDropShadowEffect
 from PyQt5.QtCore import Qt, QTimer
 
 from Baidu_Text_transAPI import trans
@@ -19,47 +20,102 @@ class MainWindow(QMainWindow):
 
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.setObjectName("main Window")
-        qss = "QWidget#mainWindow{background-color:black;}"
-        self.setStyleSheet(qss)
+        self.setObjectName("MainWindow")
+        self.setWindowFlags(self.windowFlags() & ~QtCore.Qt.WindowMaximizeButtonHint)
+        self.setAttribute(QtCore.Qt.WA_TranslucentBackground)
         self.initUI()
         self.word_box_path = os.path.join(os.path.expanduser("~"), 'Desktop')
         self.word_box_file = open(os.path.join(self.word_box_path, "word_box.txt"), 'a+')
         self.words = []
 
+        # 添加阴影
+        shadow = QGraphicsDropShadowEffect(self)
+        shadow.setBlurRadius(20)
+        shadow.setColor(QtGui.QColor(0, 0, 0, 180))
+        shadow.setOffset(0, 0)
+        self.setGraphicsEffect(shadow)
+
+        # 居中显示
+        qr = self.frameGeometry()
+        cp = QtGui.QGuiApplication.primaryScreen().availableGeometry().center()
+        qr.moveCenter(cp)
+        self.move(qr.topLeft())
+
     def initUI(self):
+        self.setWindowTitle("翻译小工具 by @陶欤冰")
+        self.resize(360, 220)
 
-        self.setWindowTitle("翻译小工具by@陶欤冰")
-        self.setStyleSheet("#MainWindow{background-color: black}")
-        self.setCentralWidget(QWidget())  # 指定主窗口中心部件
-        self.statusBar().showMessage("ready")  # 状态栏显示信息
+        # 主部件和布局
+        central = QWidget(self)
+        self.setCentralWidget(central)
+        layout = QVBoxLayout(central)
+        layout.setContentsMargins(18, 18, 18, 18)
+        layout.setSpacing(12)
 
-        # 定时器，用来显示时间
-        timer = QTimer(self)
-        timer.timeout.connect(self.showtime)
-        timer.start()
+        # 顶部时间和单选
+        top_layout = QHBoxLayout()
+        self.is_word_box = QRadioButton('记录到单词本')
+        self.is_word_box.setStyleSheet("color: #00BFFF; font-weight: bold;")
+        self.label_time = QLabel(datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
+        self.label_time.setStyleSheet("color: #aaa; font-size: 12px;")
+        top_layout.addWidget(self.is_word_box)
+        top_layout.addStretch()
+        top_layout.addWidget(self.label_time)
+        layout.addLayout(top_layout)
 
-        # 单选按钮，是否需要记录到单词本
-        self.is_word_box = QRadioButton('记录到单词本', self)
-        self.label_time = QLabel(datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"), self)
-        self.label_time.setGeometry(170, 1, 120, 30)
-
-        self.resize(300, 150)
-        self.label = QLabel(self)
+        # 翻译显示区域
+        self.label = QLabel("请复制文本以翻译", self)
         self.label.setFrameStyle(QFrame.Panel | QFrame.Sunken)
         self.label.setAlignment(Qt.AlignCenter)
-        self.label.setGeometry(QtCore.QRect(51, 25, 201, 81))
         self.label.setWordWrap(True)
-
-        font = QtGui.QFont()
-        font.setFamily('微软雅黑')
-        font.setPointSize(14)
-        font.setBold(True)
+        font = QtGui.QFont('微软雅黑', 16, QtGui.QFont.Bold)
         self.label.setFont(font)
+        self.label.setStyleSheet("""
+            background: qlineargradient(x1:0, y1:0, x2:1, y2:1, stop:0 #232526, stop:1 #414345);
+            color: #fff;
+            border-radius: 12px;
+            padding: 18px;
+            border: 2px solid #00BFFF;
+        """)
+        layout.addWidget(self.label)
+
+        # 状态栏美化
+        self.statusBar().setStyleSheet("color: #00BFFF; background: #232526; border-top: 1px solid #444;")
+
+        # 自定义按钮（可选）
+        btn_layout = QHBoxLayout()
+        btn_layout.addStretch()
+        copy_btn = QPushButton("复制翻译结果")
+        copy_btn.setStyleSheet("""
+            QPushButton {
+                background-color: #00BFFF;
+                color: white;
+                border: none;
+                border-radius: 8px;
+                padding: 6px 18px;
+                font-weight: bold;
+            }
+            QPushButton:hover {
+                background-color: #1E90FF;
+            }
+        """)
+        copy_btn.clicked.connect(self.copy_result)
+        btn_layout.addWidget(copy_btn)
+        layout.addLayout(btn_layout)
+
+        # 定时器
+        timer = QTimer(self)
+        timer.timeout.connect(self.showtime)
+        timer.start(1000)
 
     def showtime(self):
         text = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         self.label_time.setText(text)
+
+    def copy_result(self):
+        clipboard = QApplication.clipboard()
+        clipboard.setText(self.label.text())
+        self.statusBar().showMessage("翻译结果已复制", 2000)
 
     # 重新实现各事件处理程序
     def keyPressEvent(self, event):

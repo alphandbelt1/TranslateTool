@@ -10,12 +10,15 @@ import random
 import json
 from hashlib import md5
 from config import *
+import openai
+import os
 
 # Set your own appid/appkey.
 #
 
 # appid = 'Set your appid'
 # appkey = 'Set your appkey'
+
 
 
 def make_md5(s, encoding='utf-8'):
@@ -36,42 +39,33 @@ def is_chinese(string):
 
 
 def trans(query):
-    # For list of language codes, please refer to `https://api.fanyi.baidu.com/doc/21`
     if is_chinese(query):
-        from_lang = 'zh'
-        to_lang = 'en'
+        prompt = f"请将下面的中文翻译成英文：{query}"
     else:
-        print("字符是英文，翻译成中文")
-        from_lang = 'en'
-        to_lang = 'zh'
+        prompt = f"请将下面的英文翻译成中文：{query}"
+
     try:
-        endpoint = 'http://api.fanyi.baidu.com'
-        path = '/api/trans/vip/translate'
-        url = endpoint + path
+        # api_key从环境变量中获取
+        api_key = os.getenv("OPENAI_API_KEY")
 
-        query = query
+        # 打印出所有的环境变量
+        print(os.environ)
+        # json格式化展示出来
+        print(json.dumps(dict(os.environ), indent=4))
 
-        # Generate salt and sign
-
-        salt = random.randint(32768, 65536)
-        sign = make_md5(appid + query + str(salt) + appkey)
-
-        # Build request
-        headers = {'Content-Type': 'application/x-www-form-urlencoded'}
-        payload = {'appid': appid, 'q': query, 'from': from_lang, 'to': to_lang, 'salt': salt, 'sign': sign}
-
-        # Send request
-        r = requests.post(url, params=payload, headers=headers)
-        result = r.json()
-        print(result)
-        res = result["trans_result"][0]["dst"]
-        return str(res)
+        client = openai.OpenAI(api_key=api_key)  # 替换为你的 key
+        response = client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[{"role": "user", "content": prompt}],
+            temperature=0.3,
+        )
+        print("response:", response)    
+        return response.choices[0].message.content.strip()
     except Exception as e:
         return str(e)
+
 
 
 if __name__ == "__main__":
     print(trans("驱动器不能为空"))
 
-# # Show response
-# print(json.dumps(result, indent=4, ensure_ascii=False))
